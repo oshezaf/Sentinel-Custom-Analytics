@@ -33,6 +33,8 @@ The above use case can be generalized using parameters:
 - Minimum and maximum learning periods
 - The grouping fields.
 - The threshold criteria. To start with, any of:
-  - Number of standard deviations.
-  - Multiply of percentiles, including median.
-- Whether the threshold is for the individual, or across the population.
+  - Prediction using series decomposition.
+  - Dynamic threshold, for the individual, or across the population:
+    - Number of standard deviations.
+    - Multiply of percentiles, including median.
+  - Whether negative outliers should are be consider anomalous.
