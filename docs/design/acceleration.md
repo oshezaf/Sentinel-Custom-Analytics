@@ -19,6 +19,7 @@ Future:
     - UserField- the field from the source depicting a user.
     - AcitivtyField - the field from the source depicting an activity.
     - SrcIpAddField- the field from the source depicting the IP from which the activity was performed.
+    - Size (long) - a field from the source depicting a numerical size information, such as file length, session length etc.
   - Time series and forecast generation parameters 
     - **TimeSeriesBinSize** - the size, in minutes of the bins to create data points and forecasts on. Note that the same value is also used for the forcast bin size.
     - **TimeSeriesGenerationDelay** - the delay, in minutes for generation, to accomodate for source ingest delays. For example, if the TimeSeriesGenerationDelay, the current generation run will generate time series only up to events arriving at least 30 minutes ago. 
@@ -55,7 +56,8 @@ A playbook that will run every **SeriesGenerationFrequency** minutes and generat
 -	The output time series, in a standard format will be appended to the custom table **SentinelCustomAnalytics_TimeSeries** that will include:
   -	**Source**: The source name.
   - **Hostname**, **User**, **SrcIpAddr**, **Activity**: The dimention values.
-  - **Count**
+  - **Count** of records in the bin.
+  - **Max**, **Min**, **Sum**, and **Avg** on the size field.
   - **TimeBin**: The bin timestamp.
 
 Future enhancements:
