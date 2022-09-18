@@ -20,7 +20,7 @@ The general outline of the initial project is as follows:
 - [Workbook](docs/design/detection-and-invstigation.md#anomaly-investigation-workbook) to investigate an anomaly.
 - A content hub solution to package it all.
 
-In addition, we plan toprovide:
+In addition, we plan to provide:
 -	Documentation.
 -	Presentation and demo.
 -	Cost prediction model for the cost of Logic Apps and custom logs required.
