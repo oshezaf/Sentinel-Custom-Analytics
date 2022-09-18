@@ -38,4 +38,4 @@ Future/options:
   - Geolocation alerting: add enrichment using a playbook.
 - This can be implemented by:
   - By refreshing the date into the last 14 days, enabling the use in different analytic rules. 
-  - By adding fields to the forecast table and populating them using the playbook in the forecast table.
+  - By adding fields to the forecast table and populating them using the playbook in the forecast table. This essentially uses Logic Apps as part of the rules engine.
