@@ -27,7 +27,7 @@ So for example:
 -	If an anomaly is identified, an alert will be triggered, with the alert details taken from the **SentinelCustomAnalytics_AnomaliesConfiguration** configuration watchlist.
 -	An alert will not be triggered if the combination of host/user/activity/ip combinations appears in the **SentinelCustomAnalytics_AnomaliesExceptions** watchlist.
 
-## Incident generation rule
+## Incident generation analytic rule
 
 The incident generation rule will aggregate anomlies for each dimention combination, taking into account a wight include **SentinelCustomAnalytics_AnomaliesConfiguration** and will trigger an incident if the sum is higher than a threshold.
 
