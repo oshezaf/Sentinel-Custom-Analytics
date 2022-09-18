@@ -55,6 +55,7 @@ A playbook that will run every **SeriesGenerationFrequency** minutes and generat
 -	The output time series, in a standard format will be appended to the custom table **SentinelCustomAnalytics_TimeSeries** that will include:
   -	**Source**: The source name.
   - **Hostname**, **User**, **SrcIpAddr**, **Activity**: The dimention values.
+  - **Count**
   - **TimeBin**: The bin timestamp.
 
 Future enhancements:
