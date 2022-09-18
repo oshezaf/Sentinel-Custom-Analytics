@@ -8,11 +8,10 @@ In this project, we will develop a Sentinel solution that uses KQL, watchlists, 
 
 The general outline of the initial project is as follows:
 
-- A [service to generate acceleration tables](docs/design/acceleration.md), using Logic Apps or Azure Functions, that will serve as baselines to compare activity against.
-- A set of KQL functions that use the acceleration tables to calculate dynamic thresholds to facilitate custom rules, hunting queries and insights using the baselines.
-- A dynamic analytics rule, configured using a Watchlist, that detects abnormal behaviors, using [series decomposition](https://learn.microsoft.com/azure/data-explorer/kusto/query/series-decomposefunction). The initial release focuses on supporting any source, across predefined dimension. 
-- An analytic rule to aggregate anomalies to trigger an incident.
-- A workbook to investigate an anomaly.
+- [Service to generate acceleration tables](docs/design/acceleration.md), using Logic Apps or Azure Functions, that will serve as baselines to compare activity against.
+- [Dynamic analytics rule](docs/design/detection-and-invstigation.md#anomaly-detection-analytic-rule), configured using a Watchlist, that detects abnormal behaviors, using [series decomposition](https://learn.microsoft.com/azure/data-explorer/kusto/query/series-decomposefunction). The initial release focuses on supporting any source, across predefined dimension. 
+- [Analytic rule](docs/design/detection-and-invstigation.md#incident-generation-analytic-rule) to aggregate anomalies to trigger an incident.
+- [Workbook](docs/design/detection-and-invstigation.md#anomaly-investigation-workbook) to investigate an anomaly.
 - A content hub solution to package it all.
 
 In the future we plan to expand also to:
