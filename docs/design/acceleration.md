@@ -67,10 +67,23 @@ Future enhancements:
 ## Prediction generation playbook
 
 A playbook that will take the timeseries and will generate predictions to be used by the analytic rule. 
+
 -	The playbook will run every **ForecastGenerationFrequency** minutes, that can be different than **SeriesGenerationFrequency**.
 -	The playbook will generate for each time series (i.e. per source and dimensions), the prediction to future time bins up to **ForecastGenerationPeriod** using the [series_decompose_forecast](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/series-decompose-forecastfunction) function. 
 -	The output time series, in a standard format will be written to a single custom table that will include:
 -	The result will be appended to the prediction custom table **SentinelCustomAnalytics_Prediction** which has the same fields as **SentinelCustomAnalytics_TimeSeries** plus a forecast value.
 
-Future enhancements:
+As an option, the playbook may also generate the forecasts, or baseline for the following anomalyies:
+
+- First time seen.
+- Number of IPs used by a user.
+- Abnormal IP for a user.
+- Number of hosts used by a user.
+- Abnormal host for a user.
+- Number of users per IP.
+
+The following are less immidiate and may require additional modules:
+
+- Session length, by using count diff between start and end activity.
+- Geolocation alerting: add enrichment using a playbook.
 -	Generating prediction for a population, for example general activity for a user or a host, regardless of activity type, and taking those into account in the anomaly detection.
