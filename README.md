@@ -26,16 +26,3 @@ In addition, we plan to provide:
 -	Cost prediction model for the cost of Logic Apps and custom logs required.
 
 
-Future/options:
-- Additional anomaly detection techniques:
-  - First time seen.
-  - Session length, by using count diff between start and end activity.
-  - Number of IPs used by a user.
-  - Abnormal IP for a user.
-  - Number of hosts used by a user.
-  - Abnormal host for a user.
-  - Number of users per IP.
-  - Geolocation alerting: add enrichment using a playbook.
-- This can be implemented by:
-  - By refreshing the date into the last 14 days, enabling the use in different analytic rules. 
-  - By adding fields to the forecast table and populating them using the playbook in the forecast table. This essentially uses Logic Apps as part of the rules engine.
