@@ -26,6 +26,20 @@ So for example:
 -	The analytic rule will compare the prediction prepared by the forcast to the actual values to using [Tukey's fences](https://en.wikipedia.org/wiki/Outlier#Tukey%27s_fences).
 -	If an anomaly is identified, an alert will be triggered, with the alert details taken from the **SentinelCustomAnalytics_AnomaliesConfiguration** configuration watchlist.
 -	An alert will not be triggered if the combination of host/user/activity/ip combinations appears in the **SentinelCustomAnalytics_AnomaliesExceptions** watchlist.
+-	The alert fields will be:
+  - Name: TBD
+  - Dynamic name: TBD
+  - Description: TBD
+  - Dynamic description: TBD
+  - Entity mapping:
+    - IP
+    - Host
+    - User
+  - Custom fields:
+    - SentinentCustomAnomaly: "yes"
+    - Values TBD from **SentinelCustomAnalytics_AnomaliesConfiguration** (such as score)
+    - Time Bin
+    - Source (serves as index to the **SentinelCustomAnalytics_SourceConfiguration** field).
 
 ## Incident generation analytic rule
 
