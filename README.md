@@ -2,7 +2,7 @@
 
 A Sentinel customizable behavioral analytics solution using KQL and Playbooks
 
-![banner](https://github.com/oshezaf/Sentinel-Custom-Analytics/raw/main/analytics.jpg)
+![banner](https://github.com/oshezaf/Sentinel-Custom-Analytics/raw/main/media/analytics.jpg)
 
 Sentinel has robust analytics capabilities, but many do not address custom logs, such as business application logs and non-standard IT logs, and don't allow customers to tweak the analysis. 
 
