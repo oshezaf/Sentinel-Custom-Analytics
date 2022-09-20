@@ -37,7 +37,9 @@ So for example:
     - User
   - Custom fields:
     - SentinentCustomAnomaly: "yes"
-    - Values TBD from **SentinelCustomAnalytics_AnomaliesConfiguration** (such as score)
+    - Values TBD from **SentinelCustomAnalytics_AnomaliesConfiguration**
+      - Risk score
+      - Risk factor / category
     - Time Bin
     - Source (serves as index to the **SentinelCustomAnalytics_SourceConfiguration** field).
 
