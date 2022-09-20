@@ -64,7 +64,7 @@ Future enhancements:
 -	Arbitrary number of dimensions.
 -	Support for aggregation functions other than count.
 
-## Prediction generation playbook
+## Prediction generation Azure function
 
 A playbook that will take the timeseries and will generate predictions to be used by the analytic rule. 
 
