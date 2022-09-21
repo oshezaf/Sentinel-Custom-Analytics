@@ -4,6 +4,14 @@ A Sentinel customizable behavioral analytics solution using KQL and Playbooks
 
 ![banner](https://github.com/oshezaf/Sentinel-Custom-Analytics/raw/main/media/analytics.jpg)
 
+Project team:
+- [Devika Mehra](https://www.linkedin.com/in/devika-mehra-25469494/)
+- [Ofer Inbar](https://www.linkedin.com/in/ofer-inbar/)
+- [Will King](https://www.linkedin.com/in/kingwil/)
+- [Edi Lahav](https://www.linkedin.com/in/edi-lahav/)
+- [Jitesh Migalni](https://www.linkedin.com/in/jitesh-miglani-2282b2172/)
+- [Ofer Shezaf](https://www.linkedin.com/in/oshezaf/)
+
 Sentinel has robust analytics capabilities, but many do not address custom logs, such as business application logs and non-standard IT logs, and don't allow customers to tweak the analysis. 
 
 In this project, we will develop a Sentinel solution that uses KQL, watchlists, and playbooks (with Azure Functions as an option) to allow customers to define behavioral analyticson any data source. Initial use cases we identified are:
