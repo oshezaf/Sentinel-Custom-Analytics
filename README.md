@@ -9,7 +9,7 @@ Project team:
 - [Ofer Inbar](https://www.linkedin.com/in/ofer-inbar/)
 - [Will King](https://www.linkedin.com/in/kingwil/)
 - [Edi Lahav](https://www.linkedin.com/in/edi-lahav/)
-- [Jitesh Migalni](https://www.linkedin.com/in/jitesh-miglani-2282b2172/)
+- [Jitesh Miglani](https://www.linkedin.com/in/jitesh-miglani-2282b2172/)
 - [Ofer Shezaf](https://www.linkedin.com/in/oshezaf/)
 
 Sentinel has robust analytics capabilities, but many do not address custom logs, such as business application logs and non-standard IT logs, and don't allow customers to tweak the analysis. 
