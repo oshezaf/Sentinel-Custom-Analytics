@@ -2,6 +2,12 @@
 
 The following playbooks are used to by the Sentinel Custom Analytics solution to write custom analytics data:
 
+### Time series generation
+Playbook name: **SentinelCustomAnalyticsTimeSeries**
+<br><br>
+Description:<br>
+The SentinelCustomAnalyticsTimeSeries playbook runs by default every 10 minutes and is used to generate Time Series based on the data entered in SentinelCustomAnalytics_SourceConfiguration or SentinelCustomAnalytics_GlobalConfiguration Watchlists. Currently the timeseries can only aggregate data based on a known field name for host, username, IP, activity or any one integer field.
+
 ### Anomaly forecast generation
 Playbook name: **SentinelCustomAnalyticsForecast**
 <br><br>

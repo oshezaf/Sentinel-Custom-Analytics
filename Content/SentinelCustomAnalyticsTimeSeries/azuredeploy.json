@@ -1,0 +1,368 @@
+{
+    "$schema":  "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion":  "1.0.0.0",
+    "metadata":  {
+        "title":  "",
+        "description":  "",
+        "prerequisites":  "",
+        "postDeployment":  [
+        ],
+        "prerequisitesDeployTemplateFile":  "",
+        "lastUpdateTime":  "",
+        "entities":  [
+        ],
+        "tags":  [
+        ],
+        "support":  {
+            "tier":  "community",
+            "armtemplate":  "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
+        },
+        "author":  {
+            "name":  ""
+        }
+    },
+    "parameters":  {
+        "PlaybookName":  {
+            "defaultValue":  "SentinelCustomAnalyticsTimeSeries",
+            "type":  "string"
+        },
+        "AnalyticsTableName":  {
+            "type":  "string",
+            "metadata":  {
+                "description":  "Enter value for AnalyticsTableName"
+            }
+        }
+    },
+    "variables":  {
+        "AzureloganalyticsdatacollectorConnectionName":  "[concat('Azureloganalyticsdatacollector-', parameters('PlaybookName'))]",
+        "AzuremonitorlogsConnectionName":  "[concat('Azuremonitorlogs-', parameters('PlaybookName'))]"
+    },
+    "resources":  [
+        {
+            "properties":  {
+                "provisioningState":  "Succeeded",
+                "state":  "Disabled",
+                "definition":  {
+                    "$schema":  "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion":  "1.0.0.0",
+                    "parameters":  {
+                        "$connections":  {
+                            "defaultValue":  {
+                            },
+                            "type":  "Object"
+                        },
+                        "AnalyticsTableName":  {
+                            "defaultValue":  "[parameters('AnalyticsTableName')]",
+                            "type":  "string"
+                        }
+                    },
+                    "triggers":  {
+                        "Recurrence":  {
+                            "recurrence":  {
+                                "frequency":  "Minute",
+                                "interval":  10
+                            },
+                            "evaluatedRecurrence":  {
+                                "frequency":  "Minute",
+                                "interval":  10
+                            },
+                            "type":  "Recurrence"
+                        }
+                    },
+                    "actions":  {
+                        "For_each_-_Iterate_over_all_Sources":  {
+                            "foreach":  "@body('Run_query_and_list_results_-_Fetch')?['value']",
+                            "actions":  {
+                                "Condition_-_findBoolRunStatement":  {
+                                    "actions":  {
+                                        "For_each_-_SendMultipleChunk":  {
+                                            "foreach":  "@variables('MultipleArrays')",
+                                            "actions":  {
+                                                "Send_Data_-_Post_Summarized_Data":  {
+                                                    "runAfter":  {
+                                                    },
+                                                    "type":  "ApiConnection",
+                                                    "inputs":  {
+                                                        "body":  "@{items('For_each_-_SendMultipleChunk')}",
+                                                        "headers":  {
+                                                            "Log-Type":  "@parameters('AnalyticsTableName')"
+                                                        },
+                                                        "host":  {
+                                                            "connection":  {
+                                                                "name":  "@parameters('$connections')['azureloganalyticsdatacollector']['connectionId']"
+                                                            }
+                                                        },
+                                                        "method":  "post",
+                                                        "path":  "/api/logs"
+                                                    }
+                                                }
+                                            },
+                                            "runAfter":  {
+                                                "Set_variable_-_MultipleArrays":  [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type":  "Foreach"
+                                        },
+                                        "Run_query_and_list_results_-_Get_Summarized_Data":  {
+                                            "runAfter":  {
+                                            },
+                                            "type":  "ApiConnection",
+                                            "inputs":  {
+                                                "body":  "let lastRecievedTime = toscalar (\n    union isfuzzy=true\n        (\n            @{parameters('AnalyticsTableName')}\n            | where SourceType_s == \"@{items('For_each_-_Iterate_over_all_Sources')?['Source']}\"\n            | summarize max(TimeBin_t)\n            | extend timeWithDelay= datetime_add('minute',-@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesGenerationDelay']},max_TimeBin_t)\n            | extend max_TimeGenerated = datetime_add('minute',@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']},bin(timeWithDelay,@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']}m))\n            | project-away timeWithDelay\n        ),\n        (\n            print (now())\n            | extend timeWithDelay= datetime_add('minute',-@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesGenerationDelay']},print_0)\n            | extend max_TimeGenerated = datetime_add('day',-@{items('For_each_-_Iterate_over_all_Sources')?['MaxTimeSeriesGenerationPeriod']},bin(timeWithDelay,@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']}m))\n            | project-away print_0, timeWithDelay\n        )\n        | summarize max(max_TimeGenerated)\n    );\nlet endTime = bin(datetime_add('minute',-@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesGenerationDelay']},now()),@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']}m);\n@{items('For_each_-_Iterate_over_all_Sources')?['Source']}\n| where TimeGenerated between (lastRecievedTime .. endTime)\n| summarize Count=count(), Max=max(column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['Size']}\",\"\")), Min=min(column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['Size']}\",\"\")), Sum=sum(toreal(column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['Size']}\",\"\"))), Avg=avg(toreal(column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['Size']}\",\"\")))  \n                                 by Hostname=column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['HostnameField']}\",\"\"), \n                                    Username=column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['UserField']}\",\"\"), \n                                    Activity=column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['AcitivtyField']}\",\"\"), \n                                    SrcIpAddr=column_ifexists(\"@{items('For_each_-_Iterate_over_all_Sources')?['SrcIpAddField']}\",\"\"),\n                                    bin(TimeGenerated,@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']}m)\n| extend TimeBin = TimeGenerated, SourceType = \"@{items('For_each_-_Iterate_over_all_Sources')?['Source']}\"\n| order by TimeBin",
+                                                "host":  {
+                                                    "connection":  {
+                                                        "name":  "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                                    }
+                                                },
+                                                "method":  "post",
+                                                "path":  "/queryData",
+                                                "queries":  {
+                                                    "resourcegroups":  "Sentinel-Custom-Analytics",
+                                                    "resourcename":  "Sentinel-Custom-Analytics",
+                                                    "resourcetype":  "Log Analytics Workspace",
+                                                    "subscriptions":  "de5fb112-5d5d-42d4-a9ea-5f3b1359c6a6",
+                                                    "timerange":  "Last @{items('For_each_-_Iterate_over_all_Sources')?['MaxTimeSeriesGenerationPeriod']} days"
+                                                }
+                                            }
+                                        },
+                                        "Set_variable_-_ArraySize":  {
+                                            "runAfter":  {
+                                                "Run_query_and_list_results_-_Get_Summarized_Data":  [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type":  "SetVariable",
+                                            "inputs":  {
+                                                "name":  "ArraySize",
+                                                "value":  "@length(body('Run_query_and_list_results_-_Get_Summarized_Data')?['value'])"
+                                            }
+                                        },
+                                        "Set_variable_-_MultipleArrays":  {
+                                            "runAfter":  {
+                                                "Set_variable_-_TotalCharacterLength":  [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type":  "SetVariable",
+                                            "inputs":  {
+                                                "name":  "MultipleArrays",
+                                                "value":  "@chunk(body('Run_query_and_list_results_-_Get_Summarized_Data')?['value'],div(variables('MaxByteSizeAllowed'),div(variables('TotalCharacterLength'),variables('ArraySize'))))"
+                                            }
+                                        },
+                                        "Set_variable_-_TotalCharacterLength":  {
+                                            "runAfter":  {
+                                                "Set_variable_-_ArraySize":  [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type":  "SetVariable",
+                                            "inputs":  {
+                                                "name":  "TotalCharacterLength",
+                                                "value":  "@length(string(body('Run_query_and_list_results_-_Get_Summarized_Data')?['value']))"
+                                            }
+                                        }
+                                    },
+                                    "runAfter":  {
+                                        "Run_query_and_list_results_-_findBoolRunStatement":  [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "expression":  {
+                                        "and":  [
+                                            {
+                                                "equals":  [
+                                                    "@body('Run_query_and_list_results_-_findBoolRunStatement')?['value']?[0]['print_0']",
+                                                    true
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type":  "If"
+                                },
+                                "Run_query_and_list_results_-_findBoolRunStatement":  {
+                                    "runAfter":  {
+                                    },
+                                    "type":  "ApiConnection",
+                                    "inputs":  {
+                                        "body":  "let runStatement = toscalar( print (now())\n| extend Bool = datetime_diff('minute',now(),bin(print_0,@{items('For_each_-_Iterate_over_all_Sources')?['TimeSeriesBinSize']}m)) \u003c 10\n| project Bool);\nprint (runStatement)",
+                                        "host":  {
+                                            "connection":  {
+                                                "name":  "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                            }
+                                        },
+                                        "method":  "post",
+                                        "path":  "/queryData",
+                                        "queries":  {
+                                            "resourcegroups":  "Sentinel-Custom-Analytics",
+                                            "resourcename":  "Sentinel-Custom-Analytics",
+                                            "resourcetype":  "Log Analytics Workspace",
+                                            "subscriptions":  "de5fb112-5d5d-42d4-a9ea-5f3b1359c6a6",
+                                            "timerange":  "Last hour"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter":  {
+                                "Initialize_variable_-_MultipleArrays":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "Foreach"
+                        },
+                        "Initialize_variable_-_ArraySize":  {
+                            "runAfter":  {
+                                "Initialize_variable_-_MaxByteSizeAllowed":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "ArraySize",
+                                        "type":  "integer"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_-_MaxByteSizeAllowed":  {
+                            "runAfter":  {
+                                "Run_query_and_list_results_-_Fetch":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "MaxByteSizeAllowed",
+                                        "type":  "integer",
+                                        "value":  26214400
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_-_MultipleArrays":  {
+                            "runAfter":  {
+                                "Initialize_variable_-_TotalCharacterLength":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "MultipleArrays",
+                                        "type":  "array"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_-_TotalCharacterLength":  {
+                            "runAfter":  {
+                                "Initialize_variable_-_ArraySize":  [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type":  "InitializeVariable",
+                            "inputs":  {
+                                "variables":  [
+                                    {
+                                        "name":  "TotalCharacterLength",
+                                        "type":  "integer"
+                                    }
+                                ]
+                            }
+                        },
+                        "Run_query_and_list_results_-_Fetch":  {
+                            "runAfter":  {
+                            },
+                            "type":  "ApiConnection",
+                            "inputs":  {
+                                "body":  "let SentineCustomAnalytics_GlobalConfiguration = \n        _ASIM_GetWatchlistRaw(\"SentineCustomAnalytics_GlobalConfiguration\")\n        | extend Key = WatchlistItem[\"Key\"],\n                 Value = WatchlistItem[\"Value\"]\n        | project Key, Value;\nlet DefaultTimeSeriesBinSize = toscalar(SentineCustomAnalytics_GlobalConfiguration | where Key == \"DefaultTimeSeriesBinSize\" | project Value);\nlet DefaultTimeSeriesGenerationDelay = toscalar(SentineCustomAnalytics_GlobalConfiguration | where Key == \"DefaultTimeSeriesGenerationDelay\" | project Value);\nlet DefaultMaxTimeSeriesGenerationPeriod = toscalar(SentineCustomAnalytics_GlobalConfiguration | where Key == \"DefaultMaxTimeSeriesGenerationPeriod\" | project Value);\nlet DefaultMinForecastLookbackPeriod = toscalar(SentineCustomAnalytics_GlobalConfiguration | where Key == \"DefaultMinForecastLookbackPeriod\" | project Value);\nlet SentinelCustomAnalytics_SourceConfiguration = \n        _ASIM_GetWatchlistRaw(\"SentinelCustomAnalytics_SourceConfiguration\")\n        | extend \n                Source = WatchlistItem[\"Source\"],\n                HostnameField = WatchlistItem[\"HostnameField\"],\n                UserField = WatchlistItem[\"UserField\"],\n                AcitivtyField = WatchlistItem[\"AcitivtyField\"],\n                SrcIpAddField = WatchlistItem[\"SrcIpAddField\"],\n                Size = WatchlistItem[\"Size\"],\n                TimeSeriesBinSize = case(isnotempty(WatchlistItem[\"TimeSeriesBinSize\"]),WatchlistItem[\"TimeSeriesBinSize\"],\n                                        DefaultTimeSeriesBinSize),\n                TimeSeriesGenerationDelay = case(isnotempty(WatchlistItem[\"TimeSeriesGenerationDelay\"]),WatchlistItem[\"TimeSeriesGenerationDelay\"],\n                                        DefaultTimeSeriesGenerationDelay),\n                MaxTimeSeriesGenerationPeriod = case(isnotempty(WatchlistItem[\"MaxTimeSeriesGenerationPeriod\"]),WatchlistItem[\"MaxTimeSeriesGenerationPeriod\"],\n                                        DefaultMaxTimeSeriesGenerationPeriod)\n        | project-away _DTItemId, SearchKey, WatchlistItem, LastUpdatedTimeUTC;\nSentinelCustomAnalytics_SourceConfiguration",
+                                "host":  {
+                                    "connection":  {
+                                        "name":  "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                    }
+                                },
+                                "method":  "post",
+                                "path":  "/queryData",
+                                "queries":  {
+                                    "resourcegroups":  "Sentinel-Custom-Analytics",
+                                    "resourcename":  "Sentinel-Custom-Analytics",
+                                    "resourcetype":  "Log Analytics Workspace",
+                                    "subscriptions":  "de5fb112-5d5d-42d4-a9ea-5f3b1359c6a6",
+                                    "timerange":  "Set in query"
+                                }
+                            }
+                        }
+                    },
+                    "outputs":  {
+                    }
+                },
+                "parameters":  {
+                    "$connections":  {
+                        "value":  {
+                            "azureloganalyticsdatacollector":  {
+                                "connectionId":  "[resourceId('Microsoft.Web/connections', variables('AzureloganalyticsdatacollectorConnectionName'))]",
+                                "connectionName":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+                                "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureloganalyticsdatacollector')]"
+                            },
+                            "azuremonitorlogs":  {
+                                "connectionId":  "[resourceId('Microsoft.Web/connections', variables('AzuremonitorlogsConnectionName'))]",
+                                "connectionName":  "[variables('AzuremonitorlogsConnectionName')]",
+                                "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azuremonitorlogs')]"
+                            }
+                        }
+                    }
+                }
+            },
+            "name":  "[parameters('PlaybookName')]",
+            "type":  "Microsoft.Logic/workflows",
+            "location":  "[resourceGroup().location]",
+            "tags":  {
+                "hidden-SentinelTemplateName":  "SentinelCustomAnalytics",
+                "hidden-SentinelTemplateVersion":  "1.0"
+            },
+            "identity":  {
+                "type":  "SystemAssigned"
+            },
+            "apiVersion":  "2017-07-01",
+            "dependsOn":  [
+                "[resourceId('Microsoft.Web/connections', variables('AzureloganalyticsdatacollectorConnectionName'))]",
+                "[resourceId('Microsoft.Web/connections', variables('AzuremonitorlogsConnectionName'))]"
+            ]
+        },
+        {
+            "type":  "Microsoft.Web/connections",
+            "apiVersion":  "2016-06-01",
+            "name":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+            "location":  "[resourceGroup().location]",
+            "kind":  "V1",
+            "properties":  {
+                "displayName":  "[variables('AzureloganalyticsdatacollectorConnectionName')]",
+                "customParameterValues":  {
+                },
+                "api":  {
+                    "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azureloganalyticsdatacollector')]"
+                }
+            }
+        },
+        {
+            "type":  "Microsoft.Web/connections",
+            "apiVersion":  "2016-06-01",
+            "name":  "[variables('AzuremonitorlogsConnectionName')]",
+            "location":  "[resourceGroup().location]",
+            "kind":  "V1",
+            "properties":  {
+                "displayName":  "[variables('AzuremonitorlogsConnectionName')]",
+                "customParameterValues":  {
+                },
+                "api":  {
+                    "id":  "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azuremonitorlogs')]"
+                }
+            }
+        }
+    ]
+}
