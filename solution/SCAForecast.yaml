@@ -1,14 +1,14 @@
 Function:
-  Title: An ASIM function to get the ASimDisabledParsers watchlist
+  Title: An SCA helper function to generate predictions using series decompose forecasts
   Version: '0.1'
-  LastUpdated: Apr 27th 2022
+  LastUpdated: Sep 26th 2022
+  Author: Ofer Inbar
 References:
-- Title: ASIM
-  Link: https://aka.ms/AboutASIM
+- Title: KQL series_decompose_forecast function
+  Link: https://learn.microsoft.com/azure/data-explorer/kusto/query/series-decompose-forecastfunction
 Description: |
-  This ASIM function reads the ASimDisabledParsers watchlist. It is more performant than using the general _GetWatchlist function.
-FunctionName: ASIM_GetWatchlistRaw
-EquivalentBuiltInFunction: _ASIM_GetWatchlistRaw
+  This Sentinel Custom Analytics helper function reads time series bins from the SentinelCustomAnalytics_TimeSeries_CL table, and generates forecasts in the SentinelCustomAnalytics_Prediction_CL table using the KQL series_decompose_forecast function.
+FunctionName: SCAForecast
 
 FunctionParams:
   - Name: watchlist
@@ -18,14 +18,43 @@ FunctionParams:
     Default: dynamic([])
 
 FunctionQuery: |
-  let function = (watchlist:string, keys:dynamic = dynamic([])) {
-    Watchlist
-    | where TimeGenerated < now() 
-    | where _DTItemType == 'watchlist-item' 
-    | where WatchlistAlias == watchlist
-    | where array_length(keys) == 0 or SearchKey in (keys)
-    | summarize hint.shufflekey=_DTItemId arg_max(_DTTimestamp, _DTItemStatus, LastUpdatedTimeUTC, SearchKey, WatchlistItem) by _DTItemId 
-    | where _DTItemStatus != 'Delete' 
-    | project-away _DTTimestamp, _DTItemStatus
-  };
-  function (watchlist,keys)
+  //let TimeSeriesBinSize = 3h; //the size, in minutes of the bins to create data points and forecasts on. Note that the same value is also used for the forcast bin size.TimeSeriesGenerationDelay - the delay, in minutes for generation, to accomodate for source ingest delays. For example, if the TimeSeriesGenerationDelay, the current generation run will generate time series only up to events arriving at least 30 minutes ago.
+  // let MaxTimeSeriesGenerationPeriod= 1d;// (Y below) - how far back, in days, to generate time series for if missing.
+  //let MinForecastLookbackPeriod= 2d;// the minimum time, in days, needed to generate a forecast.
+  //let MaxForecastLookbackPeriod= 3d;// how far back, in days, to include in the data series for a forecast. Limiting lookback may be needed for performance reasons.
+  //let ForecastGenerationPeriod= 7;// how many bins to generate forcasts for in each forecasting run. Value needs to be greater than 1. we will always disregard the last data point as it may reflect an incomplete time bin
+  //let TukeysK= 1.5;// Default=1.5. the higher the number the lower the sensitivity of the anomaly
+  //
+  // get the last successfull forecast run's timeBin
+  let LastGoodForecastRun= toscalar(SentinelCustomAnalytics_Prediction_CL 
+  | where ForecastType_s== "series_decompose_forecast"
+  | summarize MaxT= max(TimeBin_t)
+  | extend MaxT = max_of(MaxT, ago(MaxForecastLookbackPeriod)));
+  //
+  // print(LastGoodForecastRun)
+  // get the first bin's dateTime
+  let StartOfTime= toscalar(SentinelCustomAnalytics_TimeSeries_CL
+  | where TimeBin_t > ago(MinForecastLookbackPeriod )| summarize min(TimeBin_t));
+  //
+  let SentinelCustomAnalytics_TimeSeriesII= SentinelCustomAnalytics_TimeSeries_CL | make-series Count=sum(Count_d), Sum=sum(Sum_d)  on TimeBin_t from StartOfTime to now(TimeSeriesBinSize * ForecastGenerationPeriod) step TimeSeriesBinSize
+  by Source_s = "SAP", Hostname_s, Username_s, SrcIpAddr_s, Activity_s
+  ;
+  //
+  let SentinelCustomAnalyticsForecast = SentinelCustomAnalytics_TimeSeriesII 
+  | extend CountForcasted = series_decompose_forecast(Series= Count, Points= ForecastGenerationPeriod+1) 
+  | extend SumForcasted = series_decompose_forecast(Series= Sum, Points= ForecastGenerationPeriod+1) 
+  | extend TimeBin= array_slice(TimeBin_t, -ForecastGenerationPeriod,-1)
+  // | extend Count= array_slice(Count, -ForecastGenerationPeriod,-1)
+  | extend CountForcasted= array_slice(CountForcasted, -ForecastGenerationPeriod,-1)
+  // | extend Sum= array_slice(Sum, -ForecastGenerationPeriod,-1)
+  | extend SumForcasted= array_slice(SumForcasted, -ForecastGenerationPeriod,-1)
+  // only care about series with values observed in the last ForecastGenerationPeriod bins
+  | where (array_sum(CountForcasted) + array_sum(SumForcasted))> 0
+  | mv-expand TimeBin to typeof(datetime), CountForcasted to typeof(real ), SumForcasted to typeof(real )
+  // , Sum to typeof(decimal), Count to typeof(decimal)
+  | project Source="SAP", Hostname= Hostname_s, User= Username_s, SrcIpAddr= SrcIpAddr_s, Activity= Activity_s, TimeBin, CountForcasted, SumForcasted
+  // ,  Sum, Count, CountTukeyUpper, SumTukeyUpper
+  | extend ForecastType= "series_decompose_forecast"
+  | where TimeBin > LastGoodForecastRun
+  ;
+  SentinelCustomAnalyticsForecast 

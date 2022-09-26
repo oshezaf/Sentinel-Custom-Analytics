@@ -5,11 +5,12 @@
 A serverless scheduled service (initially implemented using Logic Apps) will will create time series and derived forcast over data sets defined using a wathclist.
 
 Future:
+
 - Converting the Logic App to an Azure Function. 
 
 ## Configuration Watchlists
 
-### Series defintion
+### Series definition
 
 - Watchlist name: SentinelCustomAnalytics_SourceConfiguration
 - Watchlist columns:
@@ -64,9 +65,9 @@ Future enhancements:
 -	Arbitrary number of dimensions.
 -	Support for aggregation functions other than count.
 
-## Prediction generation Azure function
+## Prediction generation Logic Apps
 
-A playbook that will take the timeseries and will generate predictions to be used by the analytic rule. 
+Logic Apps that takes the time series bins and generates predictions to be used by the analytic rule. 
 
 -	The playbook will run every **ForecastGenerationFrequency** minutes, that can be different than **SeriesGenerationFrequency**.
 -	The playbook will generate for each time series (i.e. per source and dimensions), the prediction to future time bins up to **ForecastGenerationPeriod** using the [series_decompose_forecast](https://learn.microsoft.com/en-us/azure/data-explorer/kusto/query/series-decompose-forecastfunction) function. 
